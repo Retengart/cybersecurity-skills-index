@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cybersecurity Skills Catalog"
+  short_description: "Load all compact cybersecurity skill descriptions"
+  default_prompt: "Use $cybersecurity-skills-catalog only when a full catalog is worth the token cost. Run catalog_skills.py, inspect all descriptions, then read only selected archived skill files."

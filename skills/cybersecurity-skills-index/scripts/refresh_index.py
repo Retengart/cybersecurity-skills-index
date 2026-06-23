@@ -53,9 +53,12 @@ def repo_head(repo_dir: Path) -> str:
     return run(["git", "rev-parse", "--short", "HEAD"], cwd=repo_dir)
 
 
+BLOCK_SCALAR_RE = re.compile(r"^[>|](?:[0-9]+)?[+-]?$")
+
+
 def clean_scalar(value: str) -> str:
     value = one_line(value)
-    if value in {"|", ">"}:
+    if BLOCK_SCALAR_RE.match(value):
         return ""
     return value.strip().strip('"').strip("'").strip()
 
@@ -64,35 +67,90 @@ def one_line(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip()
 
 
-def parse_frontmatter(text: str) -> dict[str, str]:
+def parse_list_item(value: str) -> str:
+    return clean_scalar(value.strip()[1:].strip())
+
+
+def is_top_level_key(line: str) -> bool:
+    return bool(line and not line.startswith((" ", "\t", "-")) and ":" in line)
+
+
+def parse_block_scalar(lines: list[str], start: int, style: str) -> tuple[str, int]:
+    collected: list[str] = []
+    idx = start
+    while idx < len(lines):
+        line = lines[idx]
+        if line.strip() == "---" or is_top_level_key(line):
+            break
+        collected.append(line.strip())
+        idx += 1
+    if style.startswith("|"):
+        return one_line("\n".join(collected)), idx
+    return one_line(" ".join(collected)), idx
+
+
+def parse_frontmatter(text: str) -> dict[str, object]:
     lines = text.splitlines()
     if not lines or lines[0].strip() != "---":
         return {}
 
-    data: dict[str, str] = {}
-    current_key: str | None = None
+    frontmatter: list[str] = []
     for line in lines[1:]:
         if line.strip() == "---":
             break
+        frontmatter.append(line)
 
-        is_continuation = line.startswith((" ", "\t"))
-        if is_continuation:
-            if current_key:
-                data[current_key] = one_line(f"{data[current_key]} {line.strip()}")
-            continue
-
-        current_key = None
-        if ":" not in line or line.lstrip().startswith("-"):
+    data: dict[str, object] = {}
+    idx = 0
+    while idx < len(frontmatter):
+        line = frontmatter[idx]
+        if not line.strip() or not is_top_level_key(line):
+            idx += 1
             continue
 
         key, value = line.split(":", 1)
         key = key.strip()
-        if key in {"name", "description"}:
-            data[key] = clean_scalar(value)
-            current_key = key
+        raw_value = value.strip()
+        idx += 1
+
+        if BLOCK_SCALAR_RE.match(raw_value):
+            parsed, idx = parse_block_scalar(frontmatter, idx, raw_value)
+            data[key] = clean_scalar(parsed)
+            continue
+
+        if not raw_value:
+            items: list[str] = []
+            while idx < len(frontmatter):
+                next_line = frontmatter[idx]
+                if next_line.strip() == "---" or is_top_level_key(next_line):
+                    break
+                if next_line.lstrip().startswith("-"):
+                    item = parse_list_item(next_line.lstrip())
+                    if item:
+                        items.append(item)
+                idx += 1
+            data[key] = items
+            continue
+
+        parts = [raw_value]
+        while idx < len(frontmatter):
+            next_line = frontmatter[idx]
+            if next_line.strip() == "---" or is_top_level_key(next_line) or next_line.lstrip().startswith("-"):
+                break
+            if next_line.strip():
+                parts.append(next_line.strip())
+            idx += 1
+        data[key] = clean_scalar(" ".join(parts))
 
     for key, value in list(data.items()):
-        data[key] = clean_scalar(value)
+        if isinstance(value, str):
+            data[key] = clean_scalar(value)
+        elif isinstance(value, list):
+            deduped: list[str] = []
+            for item in value:
+                if item and item not in deduped:
+                    deduped.append(item)
+            data[key] = deduped
     return data
 
 
@@ -101,6 +159,20 @@ def first_heading(text: str) -> str:
         if line.startswith("# "):
             return one_line(line[2:])
     return ""
+
+
+def list_value(data: dict[str, object], key: str) -> list[str]:
+    value = data.get(key, [])
+    if isinstance(value, list):
+        return [str(item) for item in value if str(item).strip()]
+    if isinstance(value, str) and value.strip():
+        return [value.strip()]
+    return []
+
+
+def string_value(data: dict[str, object], key: str) -> str:
+    value = data.get(key, "")
+    return value if isinstance(value, str) else ""
 
 
 def scan_skills(repo_dir: Path, source_url: str, head: str) -> list[dict[str, str]]:
@@ -115,13 +187,25 @@ def scan_skills(repo_dir: Path, source_url: str, head: str) -> list[dict[str, st
         text = skill_file.read_text(encoding="utf-8", errors="replace")
         fm = parse_frontmatter(text)
         name = skill_file.parent.name
-        frontmatter_name = fm.get("name", "")
+        frontmatter_name = string_value(fm, "name")
+        frameworks = {
+            "nist_csf": list_value(fm, "nist_csf"),
+            "mitre_attack": list_value(fm, "mitre_attack"),
+            "d3fend_techniques": list_value(fm, "d3fend_techniques"),
+            "mitre_f3": list_value(fm, "mitre_f3"),
+            "nist_ai_rmf": list_value(fm, "nist_ai_rmf"),
+            "atlas_techniques": list_value(fm, "atlas_techniques"),
+        }
         records.append(
             {
                 "name": name,
                 "frontmatter_name": frontmatter_name,
-                "description": fm.get("description", ""),
+                "description": string_value(fm, "description"),
                 "title": first_heading(text) or frontmatter_name,
+                "domain": string_value(fm, "domain"),
+                "subdomain": string_value(fm, "subdomain"),
+                "tags": list_value(fm, "tags"),
+                "frameworks": frameworks,
                 "relative_path": str(skill_file.relative_to(repo_dir)),
                 "source": "mukul975/Anthropic-Cybersecurity-Skills",
                 "source_url": source_url,

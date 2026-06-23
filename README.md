@@ -1,19 +1,30 @@
 # Cybersecurity Skills Index
 
-Single index skill for the large [`mukul975/Anthropic-Cybersecurity-Skills`](https://github.com/mukul975/Anthropic-Cybersecurity-Skills) archive.
+Two compact skills for the large [`mukul975/Anthropic-Cybersecurity-Skills`](https://github.com/mukul975/Anthropic-Cybersecurity-Skills) archive.
 
-It keeps only one visible skill in an agent context, then searches a local JSONL index and tells the agent which specific archived `SKILL.md` files to read.
+- `cybersecurity-skills-index`: default entry point. Searches the local index, shows the 10 closest skill descriptions, then tells the agent which specific archived `SKILL.md` files to read.
+- `cybersecurity-skills-catalog`: full-catalog companion. Loads compact metadata for every archived skill when broad discovery is worth the token cost.
 
 ## Install
+
+Install both skills:
+
+```bash
+npx skills add Retengart/cybersecurity-skills-index -g
+```
+
+Install only the search index skill:
 
 ```bash
 npx skills add Retengart/cybersecurity-skills-index --skill cybersecurity-skills-index -g
 ```
 
+Do not install `cybersecurity-skills-catalog` by itself. It is a companion skill that uses the shared scripts shipped with `cybersecurity-skills-index`; install both skills with the first command when you need the catalog.
+
 For a local checkout:
 
 ```bash
-npx skills add . --skill cybersecurity-skills-index -g
+npx skills add . -g
 ```
 
 ## Use
@@ -27,7 +38,13 @@ python3 skills/cybersecurity-skills-index/scripts/refresh_index.py --update
 Search:
 
 ```bash
-python3 skills/cybersecurity-skills-index/scripts/search_skills.py "splunk incident triage"
+python3 skills/cybersecurity-skills-index/scripts/search_skills.py --jsonl --why --limit 10 "splunk incident triage"
+```
+
+Print the full compact catalog:
+
+```bash
+python3 skills/cybersecurity-skills-index/scripts/catalog_skills.py
 ```
 
 Print one archived skill:
@@ -40,7 +57,7 @@ The scripts use only the Python standard library. `uv run python ...` also works
 
 ## What Is Committed
 
-This repo commits the wrapper skill and scripts. It does not commit the generated `skills-index.jsonl` cache or the cloned upstream archive. The index is rebuilt locally from the upstream Apache-2.0 repository.
+This repo commits the wrapper skills, scripts, tests, and small golden query file. It does not commit the generated `skills-index.jsonl` cache, local install lock files, or the cloned upstream archive. The index is rebuilt locally from the upstream Apache-2.0 repository.
 
 ## Attribution
 

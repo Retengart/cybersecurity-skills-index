@@ -1,6 +1,8 @@
 __pycache__/
 *.py[cod]
 .DS_Store
+.agents/
+skills-lock.json
 
 # Local/generated cache. Rebuild with scripts/refresh_index.py.
 skills/cybersecurity-skills-index/references/skills-index.jsonl

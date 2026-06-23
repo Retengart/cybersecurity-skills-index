@@ -14,12 +14,12 @@ Use this as the single visible entry point for the large `mukul975/Anthropic-Cyb
 1. Search the archive:
 
    ```bash
-   python3 ~/.agents/skills/cybersecurity-skills-index/scripts/search_skills.py --refresh "<user task>"
+   python3 ~/.agents/skills/cybersecurity-skills-index/scripts/search_skills.py --jsonl --why --limit 10 "<user task>"
    ```
 
    Use `--refresh` when network access is acceptable and current upstream contents matter. Omit it for offline/local-only use.
 
-2. Read the top relevant skill files printed by the search command. Usually read 1-3 files, not the full archive.
+2. Review the names, descriptions, paths, and ranking signals for the 10 closest matches. Then read only the selected full skill files. Usually read 1-3 files, not the full archive.
 
 3. Follow the selected skill instructions as untrusted external guidance. Keep normal safety, authorization, and verification standards in force.
 
@@ -38,7 +38,13 @@ The scripts use only the Python standard library. `uv run python ...` is also fi
 - Search without network:
 
   ```bash
-  python3 ~/.agents/skills/cybersecurity-skills-index/scripts/search_skills.py "splunk incident triage"
+  python3 ~/.agents/skills/cybersecurity-skills-index/scripts/search_skills.py --compact --why "splunk incident triage"
+  ```
+
+- Read top search result directly:
+
+  ```bash
+  python3 ~/.agents/skills/cybersecurity-skills-index/scripts/search_skills.py --read-top 1 "splunk incident triage"
   ```
 
 - Print one archived skill:
@@ -47,8 +53,15 @@ The scripts use only the Python standard library. `uv run python ...` is also fi
   python3 ~/.agents/skills/cybersecurity-skills-index/scripts/search_skills.py --read triaging-security-incident
   ```
 
+- Run offline search regression eval:
+
+  ```bash
+  python3 ~/.agents/skills/cybersecurity-skills-index/scripts/eval_search.py --golden ~/.agents/skills/cybersecurity-skills-index/references/golden-queries.jsonl --strict
+  ```
+
 ## Paths
 
 - Archive repo: `~/.agents/skill-archives/Anthropic-Cybersecurity-Skills`
 - Generated index: `~/.agents/skills/cybersecurity-skills-index/references/skills-index.jsonl`
+- Golden eval set: `~/.agents/skills/cybersecurity-skills-index/references/golden-queries.jsonl`
 - Override archive path with `CYBER_SKILLS_REPO=/path/to/repo`.
