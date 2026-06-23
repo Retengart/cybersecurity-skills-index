@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cybersecurity Skills Index"
+  short_description: "Search one large cybersecurity skills archive"
+  default_prompt: "Use $cybersecurity-skills-index to find the right cybersecurity skill for this task."
