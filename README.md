@@ -7,7 +7,7 @@ It keeps only one visible skill in an agent context, then searches a local JSONL
 ## Install
 
 ```bash
-npx skills add <owner>/cybersecurity-skills-index --skill cybersecurity-skills-index -g
+npx skills add Retengart/cybersecurity-skills-index --skill cybersecurity-skills-index -g
 ```
 
 For a local checkout:

@@ -71,6 +71,10 @@ def score(record: dict[str, str], query: str) -> float:
     haystack = f"{name_norm} {frontmatter_name_norm} {title_norm} {desc_norm}"
 
     value = 0.0
+    if query_norm and query_norm == name_norm:
+        value += 200.0
+    if query_norm and query_norm in {frontmatter_name_norm, title_norm}:
+        value += 160.0
     if query_norm and query_norm in haystack:
         value += 50.0
     if query_norm and query_norm in name_norm:
